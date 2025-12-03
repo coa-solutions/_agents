@@ -4,7 +4,25 @@ import os
 from datetime import datetime
 from pathlib import Path
 
+__all__ = ['SESSIONS_DIR', 'start_session', 'get_current_session', 'get_session_dir',
+           'get_session_meta', 'get_all_sessions', 'get_active_sessions', 'cleanup_stale', 'time_ago']
+
 SESSIONS_DIR = Path.home() / '.agents' / 'sessions'
+
+
+def start_session(session_id: str, cwd: str | None = None) -> None:
+    """Start a new session."""
+    session_dir = SESSIONS_DIR / session_id
+    session_dir.mkdir(parents=True, exist_ok=True)
+
+    meta = {
+        'session_id': session_id,
+        'started': datetime.now().isoformat(),
+        'cwd': cwd or os.getcwd(),
+        'pid': os.getpid(),
+    }
+    (session_dir / 'meta.json').write_text(json.dumps(meta))
+    os.environ['AGENT_SESSION_ID'] = session_id
 
 
 def get_current_session() -> str | None:
