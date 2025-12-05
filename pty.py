@@ -51,10 +51,17 @@ def run_claude(args: list[str]) -> int:
             except (OSError, ProcessLookupError):
                 pass
 
+    def handle_term(signum, frame):
+        proc.terminate()
+        proc.wait()
+        if sys.stdin.isatty():
+            termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
+        sys.exit(0)
+
     signal.signal(signal.SIGWINCH, handle_sigwinch)
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
-    signal.signal(signal.SIGTERM, signal.SIG_IGN)
-    signal.signal(signal.SIGHUP, signal.SIG_IGN)
+    signal.signal(signal.SIGINT, signal.SIG_IGN)  # Let Ctrl+C go to Claude
+    signal.signal(signal.SIGTERM, handle_term)
+    signal.signal(signal.SIGHUP, handle_term)
 
     if sys.stdin.isatty():
         tty.setraw(sys.stdin.fileno())
